@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pure Chess v10.1 Direct Forge Polish</title>
+<style>
+body{margin:0;min-height:100svh;display:grid;place-items:center;background:#050906;color:#f8efd9;font-family:system-ui,-apple-system,Segoe UI,sans-serif}.card{max-width:620px;margin:18px;border:1px solid rgba(255,255,255,.15);border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.38)}.badge{color:#e8b84a;font-weight:900}
+</style>
+</head>
+<body>
+<div class="card"><h1>Pure Chess v10.1</h1><p class="badge">Loading Direct Forge polish...</p><p>Polishing winner names, endgame text, and debug output.</p></div>
+<script>
+fetch('play-v10.html?v=10-core-'+Date.now()).then(function(r){return r.text()}).then(function(html){
+  var patch = String.raw`<script>
+(function(){
+  function q(id){return document.getElementById(id)}
+  function prettyWinner(v){
+    if(v==='w')return 'White';
+    if(v==='b')return 'Black';
+    if(v==='draw')return 'Draw';
+    if(v==='none'||v===''||v==null)return 'none';
+    return String(v);
+  }
+  function prettyTurn(v){return v==='w'?'White':v==='b'?'Black':String(v||'none')}
+  function bootPolish(){
+    document.title='Pure Chess v10.1 Direct Forge Polish';
+    var badge=document.querySelector('.badge'); if(badge)badge.textContent='v10.1 direct polish';
+    var sub=document.querySelector('.sub'); if(sub)sub.textContent='v10.1 Direct Forge. Polished winner labels and debug.';
+    window.finish=function(r){
+      over=true; reason=r;
+      if(r==='checkmate'){
+        winner=prettyTurn(enemy(t));
+        result=winner+' wins by checkmate';
+        showEnd('CHECKMATE',winner+' Wins','The king has fallen. The field belongs to '+winner+'.');
+        endSound('win');
+      }else{
+        winner='Draw';
+        result='Draw by stalemate';
+        showEnd('STALEMATE','Draw','The battle ends without a king falling. No legal move remains.');
+        endSound('draw');
+      }
+      updateHud();
+    };
+    window.updateHud=function(){
+      var legal=allLegal(t).length,pieces=0;
+      for(var y=0;y<8;y++)for(var x=0;x<8;x++)if(b[y][x])pieces++;
+      if(q('fill'))q('fill').style.width=(intensity()*20)+'%';
+      var txt=['Result: '+result,'Reason: '+reason,'Winner: '+prettyWinner(winner),'Turn: '+prettyTurn(t),'In check: '+isCheck(t),'Legal moves: '+legal,'Pieces left: '+pieces,'Move count: '+hist.length,'Last move: '+(hist[hist.length-1]||'none'),'Music: '+(musicOn?'on':'off'),'SFX: '+(sfxOn?'on':'off'),'Intensity: '+intensity()+'/5','Polish: v10.1 winner labels'].join('\n');
+      if(q('battleBox'))q('battleBox').textContent=txt;
+      if(q('resultBox'))q('resultBox').textContent=txt;
+    };
+    window.debug=function(){
+      updateHud();
+      lastReport=['PURE CHESS DEBUG REPORT','Version: play v10.1 direct forge polish','Architecture: v10 direct core with v10.1 polish layer','No CDN. No external files.','Rules: check/checkmate/stalemate/castling/en passant/promotion picker','Endgame screen: enabled','Winner labels: polished','Adaptive music: '+(musicOn?'on':'off'),'SFX: '+(sfxOn?'on':'off'),'Result: '+result,'Reason: '+reason,'Winner: '+prettyWinner(winner),'Turn: '+prettyTurn(t),'Current legal moves: '+allLegal(t).length,'White legal moves: '+allLegal('w').length,'Black legal moves: '+allLegal('b').length,'In check: '+isCheck(t),'Intensity: '+intensity()+'/5','URL: '+location.href,'Squares: '+document.querySelectorAll('.sq').length,'Theme: '+q('theme').value,'Pieces: '+q('pieceStyle').value,'Mode: '+q('mode').value,'Bot: '+q('bot').value].join('\n');
+      if(q('debugOut'))q('debugOut').textContent=lastReport;
+      toast('v10.1 debug ran.');
+      return lastReport;
+    };
+    window.copyReport=function(){if(!lastReport)debug();if(navigator.clipboard)navigator.clipboard.writeText(lastReport).then(function(){toast('Debug copied.')}).catch(function(){toast('Copy failed.')})};
+    if(q('debugBtn'))q('debugBtn').onclick=debug;
+    if(q('copyBtn'))q('copyBtn').onclick=copyReport;
+    if(q('endOverlay')&&over){
+      if(reason==='checkmate'){
+        var w=prettyWinner(winner);
+        q('endTitle').textContent=w+' Wins';
+        q('endText').textContent='The king has fallen. The field belongs to '+w+'.';
+        q('endMeta').innerHTML='<span class="chip">Winner: '+w+'</span><span class="chip">Reason: '+reason+'</span><span class="chip">Moves: '+hist.length+'</span>';
+      }
+    }
+    updateHud();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootPolish); else bootPolish();
+})();
+<\/script>`;
+  html=html.replace(/Pure Chess v10 Direct Forge/g,'Pure Chess v10.1 Direct Forge Polish').replace(/v10 Direct Forge\. One engine\. One HUD\. No wrappers\./g,'v10.1 Direct Forge. Polished winner labels and debug.').replace(/v10 direct/g,'v10.1 polish').replace(/<\/body>/i,patch+'</body>');
+  document.open();document.write(html);document.close();
+}).catch(function(err){document.body.innerHTML='<div class="card"><h1>v10.1 failed to load</h1><p>'+String(err)+'</p><p>Use play-v10.html?v=10 while I fix it.</p></div>'});
+</script>
+</body>
+</html>
