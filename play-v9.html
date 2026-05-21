@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pure Chess Play v9 Endgame Polish</title>
+<style>
+body{margin:0;min-height:100svh;display:grid;place-items:center;background:#06100b;color:#f8efd9;font-family:system-ui,-apple-system,Segoe UI,sans-serif}.card{max-width:620px;margin:18px;border:1px solid rgba(255,255,255,.15);border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.38)}.badge{color:#e8b84a;font-weight:900}
+</style>
+</head>
+<body>
+<div class="card"><h1>Pure Chess Play v9</h1><p class="badge">Loading endgame polish build...</p><p>No CDN. No outside music files.</p></div>
+<script>
+fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
+  const patch = String.raw`<script>
+(function(){
+  var v9Report='', endingShown=false, pendingPromotion=null, originalMove=null, originalRenderSide=null, originalChooseBot=null;
+  function q(id){return document.getElementById(id)}
+  function bootV9(){
+    document.title='Pure Chess Play v9';
+    var badge=document.querySelector('.badge'); if(badge) badge.textContent='play v9 endgame';
+    var sub=document.querySelector('.sub'); if(sub) sub.textContent='Play v9. Endgame screen, promotion picker, smarter finish polish.';
+    injectV9Styles(); injectV9Dom(); wrapV9Core(); updateV9Hud();
+  }
+  function injectV9Styles(){
+    var s=document.createElement('style');
+    s.textContent='\n.endgameShade{position:fixed;inset:0;z-index:120;background:radial-gradient(circle at center,rgba(232,184,74,.16),rgba(0,0,0,.82));display:none;place-items:center;padding:18px}.endgameShade.show{display:grid}.endgameCard{width:min(620px,94vw);border:1px solid rgba(232,184,74,.42);border-radius:26px;background:linear-gradient(180deg,rgba(19,29,22,.98),rgba(4,7,5,.98));box-shadow:0 30px 100px rgba(0,0,0,.65);padding:22px;text-align:center}.endgameKicker{color:#e8b84a;text-transform:uppercase;letter-spacing:.12em;font-weight:1000;font-size:.78rem}.endgameTitle{font-size:clamp(2rem,8vw,4.2rem);line-height:1;margin:.35em 0;color:#f8efd9;text-shadow:0 0 22px rgba(232,184,74,.22)}.endgameText{color:#b8c5bb;font-size:1rem;line-height:1.45;margin-bottom:16px}.endgameActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.promoShade{position:fixed;inset:0;z-index:130;background:rgba(0,0,0,.72);display:none;place-items:center;padding:18px}.promoShade.show{display:grid}.promoCard{width:min(440px,92vw);border:1px solid rgba(232,184,74,.42);border-radius:24px;background:linear-gradient(180deg,rgba(19,29,22,.98),rgba(4,7,5,.98));box-shadow:0 30px 100px rgba(0,0,0,.65);padding:18px;text-align:center}.promoGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.promoBtn{font-size:1.35rem}.v9Chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(232,184,74,.34);background:rgba(232,184,74,.08);color:#e8b84a;border-radius:999px;padding:5px 9px;font-size:.72rem;font-weight:950;margin:2px}.battlePanel .battleBody:before{content:"v9 Endgame Polish";display:inline-block;color:#e8b84a;font-weight:1000;letter-spacing:.08em;text-transform:uppercase;font-size:.75rem}\n@media(max-width:520px){.endgameActions{grid-template-columns:1fr}.promoGrid{grid-template-columns:repeat(2,1fr)}}';
+    document.head.appendChild(s);
+  }
+  function injectV9Dom(){
+    if(!q('endgameShade')){
+      document.body.insertAdjacentHTML('beforeend','<div class="endgameShade" id="endgameShade"><div class="endgameCard"><div class="endgameKicker" id="endKicker">Battle Finished</div><div class="endgameTitle" id="endTitle">Result</div><div class="endgameText" id="endText">The board is silent.</div><div id="endMeta"></div><div class="endgameActions"><button class="primary" id="endNew">New Game</button><button id="endClose">Review Board</button></div></div></div><div class="promoShade" id="promoShade"><div class="promoCard"><div class="endgameKicker">Promotion</div><h2>Choose your new power</h2><div class="promoGrid"><button class="promoBtn" data-promo="Q">♕ Queen</button><button class="promoBtn" data-promo="R">♖ Rook</button><button class="promoBtn" data-promo="B">♗ Bishop</button><button class="promoBtn" data-promo="N">♘ Knight</button></div></div></div>');
+      q('endNew').onclick=function(){hideEndgame(); if(window.reset) reset();}; q('endClose').onclick=hideEndgame;
+      Array.prototype.forEach.call(document.querySelectorAll('.promoBtn'),function(btn){btn.onclick=function(){finishPromotion(btn.getAttribute('data-promo'));};});
+    }
+    var side=document.querySelector('.side');
+    if(side && !q('resultCard')){
+      var sec=document.createElement('div'); sec.className='sec';
+      sec.innerHTML='<b>Battle Result</b><div class="box" id="resultCard">Active game.</div>';
+      var moves=q('moves'); moves && moves.closest('.sec').before(sec);
+    }
+  }
+  function wrapV9Core(){
+    if(window.v9Wrapped)return; window.v9Wrapped=true;
+    originalMove=window.move; originalRenderSide=window.renderSide; originalChooseBot=window.chooseBot;
+    if(originalMove){
+      window.move=function(m){
+        if(m && m.promo && !m.v9PromoConfirmed && !isBotTurnV9()){
+          pendingPromotion=m; q('promoShade').classList.add('show'); return;
+        }
+        endingShown=false;
+        originalMove(m);
+        afterV9Move();
+      };
+    }
+    if(originalRenderSide){
+      window.renderSide=function(){ originalRenderSide(); afterV9Render(); };
+    }
+    if(originalChooseBot){
+      window.chooseBot=function(){ return chooseBotV9(); };
+    }
+    var oldDebug=window.debug; window.debug=function(){ if(oldDebug)oldDebug(); return debugV9(); };
+    var oldCopy=window.copyReport; window.copyReport=function(){ if(!v9Report)debugV9(); if(navigator.clipboard)navigator.clipboard.writeText(v9Report).then(function(){toastV9('Debug copied.')}).catch(function(){oldCopy&&oldCopy();}); };
+  }
+  function isBotTurnV9(){ return q('mode') && q('mode').value==='botBlack' && window.t==='b' && !window.over; }
+  function finishPromotion(piece){
+    if(!pendingPromotion)return;
+    var m=pendingPromotion; pendingPromotion=null; q('promoShade').classList.remove('show');
+    m.promo=piece; m.v9PromoConfirmed=true;
+    originalMove(m); afterV9Move();
+  }
+  function afterV9Move(){ updateV9Hud(); if(window.over) showEndgame(); }
+  function afterV9Render(){ updateV9Hud(); if(window.over && !endingShown) showEndgame(); }
+  function resultKind(){
+    var res=String(window.result||'Active');
+    if(res.toLowerCase().indexOf('checkmate')>-1)return 'checkmate';
+    if(res.toLowerCase().indexOf('stalemate')>-1)return 'stalemate';
+    if(window.over)return 'ended';
+    if(window.isCheck && window.t && isCheck(t))return 'check';
+    return 'active';
+  }
+  function showEndgame(){
+    endingShown=true;
+    var kind=resultKind(),res=String(window.result||'Game ended'),winner='None',reason='Game ended';
+    if(kind==='checkmate'){ winner=res.indexOf('White')>-1?'White':res.indexOf('Black')>-1?'Black':'Unknown'; reason='Checkmate'; q('endKicker').textContent='Checkmate'; q('endTitle').textContent=winner+' Wins'; q('endText').textContent='The king has fallen. The field belongs to '+winner+'.'; finalSound('win'); }
+    else if(kind==='stalemate'){ winner='None'; reason='Stalemate'; q('endKicker').textContent='Stalemate'; q('endTitle').textContent='Draw'; q('endText').textContent='The battle ends without a king falling. No legal move remains.'; finalSound('draw'); }
+    else { q('endKicker').textContent='Battle Finished'; q('endTitle').textContent='Game Over'; q('endText').textContent=res; finalSound('draw'); }
+    q('endMeta').innerHTML='<span class="v9Chip">Winner: '+winner+'</span><span class="v9Chip">Reason: '+reason+'</span><span class="v9Chip">Moves: '+(window.hist?hist.length:0)+'</span>';
+    q('endgameShade').classList.add('show'); updateV9Hud();
+  }
+  function hideEndgame(){q('endgameShade').classList.remove('show');}
+  function chooseBotV9(){
+    var ms=window.allLegal?allLegal(t):[]; if(!ms.length)return null;
+    var level=q('botLevel')?q('botLevel').value:'ranger';
+    if(level==='squire')return ms[Math.floor(Math.random()*ms.length)];
+    var scored=ms.map(function(m){return{m:m,s:scoreBotV9(m,level)}}).sort(function(a,b){return b.s-a.s});
+    var top=scored.slice(0,level==='wizard'?3:5); return top[Math.floor(Math.random()*top.length)].m;
+  }
+  function scoreBotV9(m,level){
+    var s=0;
+    if(m.captured && window.typ && window.VAL)s+=(VAL[typ(m.captured)]||0);
+    if(m.promo)s+=900; if(m.castle)s+=70;
+    s+=20-(Math.abs(m.to.x-3.5)+Math.abs(m.to.y-3.5))*4;
+    if(!window.snap||!window.apply||!window.allLegal||!window.isCheck||!window.restore)return s+Math.random()*8;
+    var st=snap(), oldOver=window.over, oldResult=window.result;
+    try{
+      apply(window.b,m); window.t=window.enemy?enemy(t):t; var reply=allLegal(t), chk=isCheck(t);
+      if(reply.length===0 && chk)s+=100000;
+      if(reply.length===0 && !chk)s-=level==='wizard'?6000:1200;
+      if(chk)s+=120;
+      if(level==='wizard' && reply.length){
+        var danger=0; for(var i=0;i<reply.length;i++){ if(reply[i].captured && window.typ && window.VAL) danger=Math.max(danger,VAL[typ(reply[i].captured)]||0); }
+        s-=danger*.65;
+      }
+    }catch(e){s-=1000}
+    restore(st); window.over=oldOver; window.result=oldResult;
+    return s+Math.random()*8;
+  }
+  function updateV9Hud(){
+    var kind=resultKind(), legal=window.allLegal&&window.t?allLegal(t).length:'n/a', res=String(window.result||'Active'), pieces=pieceCount();
+    var txt=['Result: '+res,'State: '+kind,'Turn: '+(window.name&&window.t?name(t):'n/a'),'Legal moves: '+legal,'Pieces left: '+pieces,'Last move: '+lastMoveText(),'Promotion: picker enabled','End screen: enabled'].join('\n');
+    if(q('resultCard'))q('resultCard').textContent=txt;
+    var battle=q('battleState'); if(battle){ battle.textContent += '\n\n[v9]\n'+txt; }
+  }
+  function pieceCount(){var n=0;if(window.b)for(var y=0;y<8;y++)for(var x=0;x<8;x++)if(b[y][x])n++;return n;}
+  function lastMoveText(){ if(!window.hist||!hist.length)return 'None'; return hist[hist.length-1]; }
+  function debugV9(){
+    var kind=resultKind(), legal=window.allLegal&&window.t?allLegal(t).length:'n/a';
+    v9Report=['PURE CHESS DEBUG REPORT','Version: play v9 endgame polish','No CDN. No external music files.','Endgame screen: enabled','Promotion picker: enabled','Bot stalemate awareness: enabled','State: '+kind,'Result: '+String(window.result||'Active'),'Turn: '+(window.name&&window.t?name(t):'n/a'),'Current legal moves: '+legal,'White legal moves: '+(window.allLegal?allLegal('w').length:'n/a'),'Black legal moves: '+(window.allLegal?allLegal('b').length:'n/a'),'In check: '+(window.isCheck&&window.t?isCheck(t):'n/a'),'Pieces left: '+pieceCount(),'Last move: '+lastMoveText(),'URL: '+location.href,'Squares: '+document.querySelectorAll('.sq').length,'Theme: '+(q('theme')?q('theme').value:'n/a'),'Pieces: '+(q('pieceStyle')?q('pieceStyle').value:'n/a'),'Mode: '+(q('mode')?q('mode').value:'n/a'),'Bot: '+(q('botLevel')?q('botLevel').value:'n/a')].join('\n');
+    if(q('debugOut'))q('debugOut').textContent=v9Report;
+    toastV9('v9 debug ran.'); return v9Report;
+  }
+  function finalSound(kind){
+    try{
+      if(!window.audioCtx){ if(window.AudioContext||window.webkitAudioContext) window.audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
+      if(window.audioCtx && audioCtx.state==='suspended')audioCtx.resume();
+      if(window.tone){ if(kind==='win'){tone(55,.7,'sawtooth',.09);tone(110,.55,'triangle',.06,.1);tone(220,.35,'sine',.04,.25);} else {tone(73,.55,'sine',.045);tone(110,.8,'triangle',.03,.15);} }
+    }catch(e){}
+  }
+  function toastV9(msg){ var t=q('toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},1500); }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootV9); else bootV9();
+})();
+<\/script>`;
+  html=html.replace(/Pure Chess Play v8 Rules Engine/g,'Pure Chess Play v9 Endgame Polish').replace(/play v8 rules/g,'play v9 endgame').replace(/Play v8\. Real checkmate rules \+ battle HUD\./g,'Play v9. Endgame polish, promotion picker, smarter finishes.').replace(/<\/body>/i,patch+'</body>');
+  document.open(); document.write(html); document.close();
+}).catch(err=>{document.body.innerHTML='<div class="card"><h1>Play v9 failed to load</h1><p>'+String(err)+'</p><p>Use play-v8.html?v=8 while I fix it.</p></div>'});
+</script>
+</body>
+</html>
