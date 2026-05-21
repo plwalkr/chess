@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Pure Chess Play v9 Endgame Polish</title>
+<title>Pure Chess Play v9.1 Endgame Polish</title>
 <style>
 body{margin:0;min-height:100svh;display:grid;place-items:center;background:#06100b;color:#f8efd9;font-family:system-ui,-apple-system,Segoe UI,sans-serif}.card{max-width:620px;margin:18px;border:1px solid rgba(255,255,255,.15);border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.38)}.badge{color:#e8b84a;font-weight:900}
 </style>
 </head>
 <body>
-<div class="card"><h1>Pure Chess Play v9</h1><p class="badge">Loading endgame polish build...</p><p>No CDN. No outside music files.</p></div>
+<div class="card"><h1>Pure Chess Play v9.1</h1><p class="badge">Loading endgame polish build...</p><p>No CDN. No outside music files.</p></div>
 <script>
 fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
   const patch = String.raw`<script>
@@ -17,14 +17,14 @@ fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
   var v9Report='', endingShown=false, pendingPromotion=null, originalMove=null, originalRenderSide=null, originalChooseBot=null;
   function q(id){return document.getElementById(id)}
   function bootV9(){
-    document.title='Pure Chess Play v9';
-    var badge=document.querySelector('.badge'); if(badge) badge.textContent='play v9 endgame';
-    var sub=document.querySelector('.sub'); if(sub) sub.textContent='Play v9. Endgame screen, promotion picker, smarter finish polish.';
-    injectV9Styles(); injectV9Dom(); wrapV9Core(); updateV9Hud();
+    document.title='Pure Chess Play v9.1';
+    var badge=document.querySelector('.badge'); if(badge) badge.textContent='play v9.1 endgame';
+    var sub=document.querySelector('.sub'); if(sub) sub.textContent='Play v9.1. Endgame polish, promotion picker, fixed debug wiring.';
+    injectV9Styles(); injectV9Dom(); wrapV9Core(); wireV9Buttons(); updateV9Hud(); debugV9();
   }
   function injectV9Styles(){
     var s=document.createElement('style');
-    s.textContent='\n.endgameShade{position:fixed;inset:0;z-index:120;background:radial-gradient(circle at center,rgba(232,184,74,.16),rgba(0,0,0,.82));display:none;place-items:center;padding:18px}.endgameShade.show{display:grid}.endgameCard{width:min(620px,94vw);border:1px solid rgba(232,184,74,.42);border-radius:26px;background:linear-gradient(180deg,rgba(19,29,22,.98),rgba(4,7,5,.98));box-shadow:0 30px 100px rgba(0,0,0,.65);padding:22px;text-align:center}.endgameKicker{color:#e8b84a;text-transform:uppercase;letter-spacing:.12em;font-weight:1000;font-size:.78rem}.endgameTitle{font-size:clamp(2rem,8vw,4.2rem);line-height:1;margin:.35em 0;color:#f8efd9;text-shadow:0 0 22px rgba(232,184,74,.22)}.endgameText{color:#b8c5bb;font-size:1rem;line-height:1.45;margin-bottom:16px}.endgameActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.promoShade{position:fixed;inset:0;z-index:130;background:rgba(0,0,0,.72);display:none;place-items:center;padding:18px}.promoShade.show{display:grid}.promoCard{width:min(440px,92vw);border:1px solid rgba(232,184,74,.42);border-radius:24px;background:linear-gradient(180deg,rgba(19,29,22,.98),rgba(4,7,5,.98));box-shadow:0 30px 100px rgba(0,0,0,.65);padding:18px;text-align:center}.promoGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.promoBtn{font-size:1.35rem}.v9Chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(232,184,74,.34);background:rgba(232,184,74,.08);color:#e8b84a;border-radius:999px;padding:5px 9px;font-size:.72rem;font-weight:950;margin:2px}.battlePanel .battleBody:before{content:"v9 Endgame Polish";display:inline-block;color:#e8b84a;font-weight:1000;letter-spacing:.08em;text-transform:uppercase;font-size:.75rem}\n@media(max-width:520px){.endgameActions{grid-template-columns:1fr}.promoGrid{grid-template-columns:repeat(2,1fr)}}';
+    s.textContent='\n.endgameShade{position:fixed;inset:0;z-index:120;background:radial-gradient(circle at center,rgba(232,184,74,.16),rgba(0,0,0,.82));display:none;place-items:center;padding:18px}.endgameShade.show{display:grid}.endgameCard{width:min(620px,94vw);border:1px solid rgba(232,184,74,.42);border-radius:26px;background:linear-gradient(180deg,rgba(19,29,22,.98),rgba(4,7,5,.98));box-shadow:0 30px 100px rgba(0,0,0,.65);padding:22px;text-align:center}.endgameKicker{color:#e8b84a;text-transform:uppercase;letter-spacing:.12em;font-weight:1000;font-size:.78rem}.endgameTitle{font-size:clamp(2rem,8vw,4.2rem);line-height:1;margin:.35em 0;color:#f8efd9;text-shadow:0 0 22px rgba(232,184,74,.22)}.endgameText{color:#b8c5bb;font-size:1rem;line-height:1.45;margin-bottom:16px}.endgameActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.promoShade{position:fixed;inset:0;z-index:130;background:rgba(0,0,0,.72);display:none;place-items:center;padding:18px}.promoShade.show{display:grid}.promoCard{width:min(440px,92vw);border:1px solid rgba(232,184,74,.42);border-radius:24px;background:linear-gradient(180deg,rgba(19,29,22,.98),rgba(4,7,5,.98));box-shadow:0 30px 100px rgba(0,0,0,.65);padding:18px;text-align:center}.promoGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.promoBtn{font-size:1.35rem}.v9Chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(232,184,74,.34);background:rgba(232,184,74,.08);color:#e8b84a;border-radius:999px;padding:5px 9px;font-size:.72rem;font-weight:950;margin:2px}.battlePanel .battleBody:before{content:"v9.1 Endgame Polish";display:inline-block;color:#e8b84a;font-weight:1000;letter-spacing:.08em;text-transform:uppercase;font-size:.75rem}.debugFixed{border-color:rgba(122,197,139,.42)!important;background:rgba(122,197,139,.1)!important;color:#7ac58b!important}\n@media(max-width:520px){.endgameActions{grid-template-columns:1fr}.promoGrid{grid-template-columns:repeat(2,1fr)}}';
     document.head.appendChild(s);
   }
   function injectV9Dom(){
@@ -40,6 +40,12 @@ fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
       var moves=q('moves'); moves && moves.closest('.sec').before(sec);
     }
   }
+  function wireV9Buttons(){
+    if(q('debugBtn')){ q('debugBtn').onclick=debugV9; q('debugBtn').classList.add('debugFixed'); }
+    if(q('copyBtn')) q('copyBtn').onclick=copyV9;
+    if(q('battleFab')) q('battleFab').onclick=function(){q('battlePanel').classList.toggle('open'); updateV9Hud(); debugV9();};
+    if(q('battleClose')) q('battleClose').onclick=function(){q('battlePanel').classList.remove('open')};
+  }
   function wrapV9Core(){
     if(window.v9Wrapped)return; window.v9Wrapped=true;
     originalMove=window.move; originalRenderSide=window.renderSide; originalChooseBot=window.chooseBot;
@@ -53,14 +59,9 @@ fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
         afterV9Move();
       };
     }
-    if(originalRenderSide){
-      window.renderSide=function(){ originalRenderSide(); afterV9Render(); };
-    }
-    if(originalChooseBot){
-      window.chooseBot=function(){ return chooseBotV9(); };
-    }
-    var oldDebug=window.debug; window.debug=function(){ if(oldDebug)oldDebug(); return debugV9(); };
-    var oldCopy=window.copyReport; window.copyReport=function(){ if(!v9Report)debugV9(); if(navigator.clipboard)navigator.clipboard.writeText(v9Report).then(function(){toastV9('Debug copied.')}).catch(function(){oldCopy&&oldCopy();}); };
+    if(originalRenderSide){ window.renderSide=function(){ originalRenderSide(); afterV9Render(); }; }
+    if(originalChooseBot){ window.chooseBot=function(){ return chooseBotV9(); }; }
+    window.debug=debugV9; window.copyReport=copyV9;
   }
   function isBotTurnV9(){ return q('mode') && q('mode').value==='botBlack' && window.t==='b' && !window.over; }
   function finishPromotion(piece){
@@ -69,8 +70,8 @@ fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
     m.promo=piece; m.v9PromoConfirmed=true;
     originalMove(m); afterV9Move();
   }
-  function afterV9Move(){ updateV9Hud(); if(window.over) showEndgame(); }
-  function afterV9Render(){ updateV9Hud(); if(window.over && !endingShown) showEndgame(); }
+  function afterV9Move(){ updateV9Hud(); wireV9Buttons(); if(window.over) showEndgame(); }
+  function afterV9Render(){ updateV9Hud(); wireV9Buttons(); if(window.over && !endingShown) showEndgame(); }
   function resultKind(){
     var res=String(window.result||'Active');
     if(res.toLowerCase().indexOf('checkmate')>-1)return 'checkmate';
@@ -118,22 +119,24 @@ fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
   }
   function updateV9Hud(){
     var kind=resultKind(), legal=window.allLegal&&window.t?allLegal(t).length:'n/a', res=String(window.result||'Active'), pieces=pieceCount();
-    var txt=['Result: '+res,'State: '+kind,'Turn: '+(window.name&&window.t?name(t):'n/a'),'Legal moves: '+legal,'Pieces left: '+pieces,'Last move: '+lastMoveText(),'Promotion: picker enabled','End screen: enabled'].join('\n');
+    var txt=['Result: '+res,'State: '+kind,'Turn: '+(window.name&&window.t?name(t):'n/a'),'Legal moves: '+legal,'Pieces left: '+pieces,'Last move: '+lastMoveText(),'Promotion: picker enabled','End screen: enabled','Debug wiring: v9.1 fixed'].join('\n');
     if(q('resultCard'))q('resultCard').textContent=txt;
-    var battle=q('battleState'); if(battle){ battle.textContent += '\n\n[v9]\n'+txt; }
+    var battle=q('battleState'); if(battle){ var base=battle.textContent.split('\n\n[v9.1]')[0].split('\n\n[v9]')[0]; battle.textContent=base+'\n\n[v9.1]\n'+txt; }
   }
   function pieceCount(){var n=0;if(window.b)for(var y=0;y<8;y++)for(var x=0;x<8;x++)if(b[y][x])n++;return n;}
   function lastMoveText(){ if(!window.hist||!hist.length)return 'None'; return hist[hist.length-1]; }
   function debugV9(){
+    updateV9Hud();
     var kind=resultKind(), legal=window.allLegal&&window.t?allLegal(t).length:'n/a';
-    v9Report=['PURE CHESS DEBUG REPORT','Version: play v9 endgame polish','No CDN. No external music files.','Endgame screen: enabled','Promotion picker: enabled','Bot stalemate awareness: enabled','State: '+kind,'Result: '+String(window.result||'Active'),'Turn: '+(window.name&&window.t?name(t):'n/a'),'Current legal moves: '+legal,'White legal moves: '+(window.allLegal?allLegal('w').length:'n/a'),'Black legal moves: '+(window.allLegal?allLegal('b').length:'n/a'),'In check: '+(window.isCheck&&window.t?isCheck(t):'n/a'),'Pieces left: '+pieceCount(),'Last move: '+lastMoveText(),'URL: '+location.href,'Squares: '+document.querySelectorAll('.sq').length,'Theme: '+(q('theme')?q('theme').value:'n/a'),'Pieces: '+(q('pieceStyle')?q('pieceStyle').value:'n/a'),'Mode: '+(q('mode')?q('mode').value:'n/a'),'Bot: '+(q('botLevel')?q('botLevel').value:'n/a')].join('\n');
+    v9Report=['PURE CHESS DEBUG REPORT','Version: play v9.1 endgame polish','No CDN. No external music files.','Endgame screen: enabled','Promotion picker: enabled','Bot stalemate awareness: enabled','Debug wiring: fixed','State: '+kind,'Result: '+String(window.result||'Active'),'Turn: '+(window.name&&window.t?name(t):'n/a'),'Current legal moves: '+legal,'White legal moves: '+(window.allLegal?allLegal('w').length:'n/a'),'Black legal moves: '+(window.allLegal?allLegal('b').length:'n/a'),'In check: '+(window.isCheck&&window.t?isCheck(t):'n/a'),'Pieces left: '+pieceCount(),'Last move: '+lastMoveText(),'URL: '+location.href,'Squares: '+document.querySelectorAll('.sq').length,'Theme: '+(q('theme')?q('theme').value:'n/a'),'Pieces: '+(q('pieceStyle')?q('pieceStyle').value:'n/a'),'Mode: '+(q('mode')?q('mode').value:'n/a'),'Bot: '+(q('botLevel')?q('botLevel').value:'n/a')].join('\n');
     if(q('debugOut'))q('debugOut').textContent=v9Report;
-    toastV9('v9 debug ran.'); return v9Report;
+    if(q('debugPill'))q('debugPill').textContent='v9.1';
+    toastV9('v9.1 debug ran.'); return v9Report;
   }
+  function copyV9(){ if(!v9Report)debugV9(); if(navigator.clipboard)navigator.clipboard.writeText(v9Report).then(function(){toastV9('Debug copied.')}).catch(function(){toastV9('Copy failed.')}); }
   function finalSound(kind){
     try{
-      if(!window.audioCtx){ if(window.AudioContext||window.webkitAudioContext) window.audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-      if(window.audioCtx && audioCtx.state==='suspended')audioCtx.resume();
+      if(window.initAudio) initAudio();
       if(window.tone){ if(kind==='win'){tone(55,.7,'sawtooth',.09);tone(110,.55,'triangle',.06,.1);tone(220,.35,'sine',.04,.25);} else {tone(73,.55,'sine',.045);tone(110,.8,'triangle',.03,.15);} }
     }catch(e){}
   }
@@ -141,9 +144,9 @@ fetch('play-v8.html?v=8-core-'+Date.now()).then(r=>r.text()).then(html=>{
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootV9); else bootV9();
 })();
 <\/script>`;
-  html=html.replace(/Pure Chess Play v8 Rules Engine/g,'Pure Chess Play v9 Endgame Polish').replace(/play v8 rules/g,'play v9 endgame').replace(/Play v8\. Real checkmate rules \+ battle HUD\./g,'Play v9. Endgame polish, promotion picker, smarter finishes.').replace(/<\/body>/i,patch+'</body>');
+  html=html.replace(/Pure Chess Play v8 Rules Engine/g,'Pure Chess Play v9.1 Endgame Polish').replace(/play v8 rules/g,'play v9.1 endgame').replace(/Play v8\. Real checkmate rules \+ battle HUD\./g,'Play v9.1. Endgame polish, promotion picker, fixed debug wiring.').replace(/<\/body>/i,patch+'</body>');
   document.open(); document.write(html); document.close();
-}).catch(err=>{document.body.innerHTML='<div class="card"><h1>Play v9 failed to load</h1><p>'+String(err)+'</p><p>Use play-v8.html?v=8 while I fix it.</p></div>'});
+}).catch(err=>{document.body.innerHTML='<div class="card"><h1>Play v9.1 failed to load</h1><p>'+String(err)+'</p><p>Use play-v8.html?v=8 while I fix it.</p></div>'});
 </script>
 </body>
 </html>
