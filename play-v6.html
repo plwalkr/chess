@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Pure Chess Play v6</title><style>body{margin:0;min-height:100svh;display:grid;place-items:center;background:#06100b;color:#f8efd9;font-family:system-ui,-apple-system,Segoe UI,sans-serif}.card{max-width:560px;margin:18px;border:1px solid rgba(255,255,255,.15);border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.38)}.badge{color:#e8b84a;font-weight:900}</style></head><body><div class="card"><h1>Pure Chess Play v6</h1><p class="badge">Loading adaptive war audio build...</p><p>No CDN. No external music files.</p></div><script>
+fetch('play.html?v=5-core-'+Date.now()).then(r=>r.text()).then(html=>{
+  const patch = String.raw`<script>
+(function(){
+  var audioCtx=null,musicOn=false,sfxOn=true,musicTimer=0,lastReportV6='';
+  function q(id){return document.getElementById(id)}
+  function bootV6(){
+    document.title='Pure Chess Play v6';
+    var badge=document.querySelector('.badge'); if(badge) badge.textContent='play v6 audio';
+    var sub=document.querySelector('.sub'); if(sub) sub.textContent='Play v6. Adaptive war audio + battle-state debug.';
+    var side=document.querySelector('.side');
+    if(side && !q('musicBtn')){
+      var sec=document.createElement('div'); sec.className='sec grid';
+      sec.innerHTML='<button id="musicBtn">Start Music</button><button id="sfxBtn">SFX On</button><div class="control"><label>Track</label><select id="track"><option value="war">War March</option><option value="forest">Ancient Forest</option><option value="dungeon">Dungeon Ruins</option><option value="kingdom">Heroic Kingdom</option></select></div><div class="control"><label>Intensity</label><div class="box" id="intensityBox">1/5</div></div>';
+      var moves=document.getElementById('moves'); moves && moves.closest('.sec').before(sec);
+      q('musicBtn').onclick=toggleMusic; q('sfxBtn').onclick=function(){sfxOn=!sfxOn;q('sfxBtn').textContent=sfxOn?'SFX On':'SFX Off';toastV6(sfxOn?'SFX on.':'SFX off.')};
+    }
+    var oldMove=window.move; if(oldMove && !window.moveV6Wrapped){window.moveV6Wrapped=true; window.move=function(x1,y1,x2,y2){var cap=window.b&&window.b[y2]&&window.b[y2][x2]; oldMove(x1,y1,x2,y2); sfx(cap?'capture':'move'); updateIntensityBox(); if(window.over) victoryPulse();};}
+    var oldDebug=window.debug; window.debug=function(){ oldDebug&&oldDebug(); var lines=['PURE CHESS DEBUG REPORT','Version: play v6 audio','No CDN. No external music files.','Adaptive music: '+(musicOn?'on':'off'),'SFX: '+(sfxOn?'on':'off'),'Intensity: '+intensity()+'/5','URL: '+location.href,'Squares: '+document.querySelectorAll('.sq').length,'White moves: '+(window.allMoves?allMoves('w').length:'n/a'),'Black moves: '+(window.allMoves?allMoves('b').length:'n/a'),'Theme: '+(q('theme')?q('theme').value:'n/a'),'Pieces: '+(q('pieceStyle')?q('pieceStyle').value:'n/a'),'Mode: '+(q('mode')?q('mode').value:'n/a'),'Bot: '+(q('botLevel')?q('botLevel').value:'n/a')]; lastReportV6=lines.join('\n'); if(q('debug'))q('debug').textContent=lastReportV6; if(q('debugPill'))q('debugPill').textContent='Ran';};
+    var oldCopy=window.copyDebug; window.copyDebug=function(){ if(!lastReportV6)window.debug(); if(navigator.clipboard)navigator.clipboard.writeText(lastReportV6).then(function(){toastV6('Debug copied.')}); else oldCopy&&oldCopy(); };
+    setInterval(updateIntensityBox,900); updateIntensityBox();
+  }
+  function initAudio(){ if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended')audioCtx.resume(); }
+  function tone(freq,dur,type,gain,delay){ if(!audioCtx)return; var now=audioCtx.currentTime+(delay||0),o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(freq,now); g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(gain||0.04,now+.02); g.gain.exponentialRampToValueAtTime(0.0001,now+dur); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+dur+.05); }
+  function intensity(){ var pieces=0;if(window.b)for(var y=0;y<8;y++)for(var x=0;x<8;x++)if(b[y][x])pieces++; var moves=window.hist?hist.length:0; var legal=window.allMoves&&window.t?allMoves(t).length:20; var base=Math.min(5,Math.floor(moves/8)+1); var end=pieces<=12?2:pieces<=18?1:0; var pinch=legal<=5?1:0; return Math.max(1,Math.min(5,base+end+pinch)); }
+  function updateIntensityBox(){ var el=q('intensityBox'); if(el)el.textContent=intensity()+'/5'; }
+  function musicTick(){ if(!musicOn||!audioCtx)return; var i=intensity(),track=q('track')?q('track').value:'war',root={war:55,forest:73,dungeon:49,kingdom:65}[track]||55; tone(root,.34,'sine',.035); if(i>=2)tone(root*2,.16,'triangle',.025,.13); if(i>=3)tone(root*.5,.18,'sawtooth',.05,.06); if(i>=4)tone(root*1.5,.18,'triangle',.035,.28); if(i>=5){tone(root*.75,.24,'sawtooth',.06,.12);tone(root*2.25,.2,'square',.028,.34)} clearTimeout(musicTimer); musicTimer=setTimeout(musicTick,Math.max(360,900-i*90)); }
+  function toggleMusic(){ initAudio(); musicOn=!musicOn; q('musicBtn').textContent=musicOn?'Stop Music':'Start Music'; toastV6(musicOn?'Adaptive music started.':'Music stopped.'); if(musicOn)musicTick(); }
+  function sfx(kind){ if(!sfxOn)return; initAudio(); if(kind==='move'){tone(180,.08,'triangle',.025);tone(95,.07,'sine',.018,.04)} if(kind==='capture'){tone(80,.22,'sawtooth',.06);tone(46,.28,'sine',.08,.02)} }
+  function victoryPulse(){ initAudio(); tone(55,.65,'sawtooth',.09); tone(110,.55,'triangle',.06,.1); tone(220,.35,'sine',.04,.25); }
+  function toastV6(msg){ var t=q('toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},1500); }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootV6); else bootV6();
+})();
+<\/script>`;
+  html=html.replace(/Pure Chess Play v5/g,'Pure Chess Play v6').replace(/play v5/g,'play v6 audio').replace(/<\/body>/i,patch+'</body>');
+  document.open(); document.write(html); document.close();
+}).catch(err=>{document.body.innerHTML='<div class="card"><h1>Play v6 failed to load</h1><p>'+String(err)+'</p><p>Use play.html?v=5 while I fix it.</p></div>'});
+</script></body></html>
