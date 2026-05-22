@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pure Chess v14 System Forge</title>
+<style>
+html,body{margin:0;min-height:100svh;background:#040705;color:#f8efd9;font-family:system-ui,-apple-system,Segoe UI,sans-serif}body{display:grid;place-items:center;padding:18px}.card{width:min(680px,94vw);border:1px solid rgba(232,184,74,.35);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.035));box-shadow:0 24px 75px rgba(0,0,0,.48);padding:22px}.badge{display:inline-block;border:1px solid rgba(232,184,74,.44);background:rgba(232,184,74,.1);color:#e8b84a;border-radius:999px;padding:6px 10px;font-weight:950;font-size:.8rem}h1{margin:12px 0 8px}.muted{color:#b8c5bb;line-height:1.45}.list{background:rgba(0,0,0,.23);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;margin:14px 0;white-space:pre-wrap;font:13px ui-monospace,Menlo,Consolas,monospace}a,button{display:inline-block;width:100%;text-align:center;margin-top:10px;border:1px solid rgba(232,184,74,.5);border-radius:14px;background:linear-gradient(180deg,rgba(232,184,74,.24),rgba(232,184,74,.08));color:#f8efd9;text-decoration:none;font-weight:950;padding:12px;box-sizing:border-box}iframe{position:fixed;inset:0;width:100%;height:100svh;border:0;display:none;background:#040705}.open iframe{display:block}.open .card{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+<span class="badge">v14 System Forge</span>
+<h1>Pure Chess System Upgrade Path</h1>
+<p class="muted">v13 is the current stable battle build. v14 is reserved for the deeper system upgrade: stronger bot selection, self-check reporting, last-bot-move scoring, and better stalemate avoidance.</p>
+<div class="list">Stable base: play-v13.html
+Target v14 system work:
+- Bot mate priority
+- Bot stalemate avoidance
+- Last bot move score in debug
+- System self-checks in debug
+- Cleaner result reasoning
+- Stronger endgame decision logic</div>
+<a href="play-v13.html?v=13">Open stable v13</a>
+<button id="inline">Open stable v13 here</button>
+</div>
+<iframe id="game" src="play-v13.html?v=13"></iframe>
+<script>
+document.getElementById('inline').onclick=function(){document.body.classList.add('open')};
+</script>
+</body>
+</html>
