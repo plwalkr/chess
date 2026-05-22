@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pure Chess v15 Soft Piece Forge</title>
+<style>
+html,body{margin:0;min-height:100svh;background:#040705;color:#f8efd9;font-family:system-ui,-apple-system,Segoe UI,sans-serif}body{display:grid;place-items:center;padding:18px}.card{width:min(680px,94vw);border:1px solid rgba(232,184,74,.35);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.035));box-shadow:0 24px 75px rgba(0,0,0,.48);padding:22px}.badge{display:inline-block;border:1px solid rgba(232,184,74,.44);background:rgba(232,184,74,.1);color:#e8b84a;border-radius:999px;padding:6px 10px;font-weight:950;font-size:.8rem}h1{margin:12px 0 8px}.muted{color:#b8c5bb;line-height:1.45}
+</style>
+</head>
+<body>
+<div class="card"><span class="badge">v15 Soft Piece Forge</span><h1>Loading visual system...</h1><p class="muted">Keeping the wood board. Adding rounded 2026 soft 3D pieces.</p></div>
+<script>
+fetch('play-v13.html?v=13-base-'+Date.now()).then(function(r){return r.text()}).then(function(html){
+var patch = String.raw`<script>
+(function(){
+  function q(id){return document.getElementById(id)}
+  function installV15(){
+    document.title='Pure Chess v15 Soft Piece Forge';
+    var badge=document.querySelector('.badge'); if(badge) badge.textContent='v15 soft forge';
+    var sub=document.querySelector('.sub'); if(sub) sub.textContent='v15 Soft Piece Forge. Hardwood board + rounded 2026 Soft 3D pieces.';
+    injectV15Css();
+    relabelControls();
+    installPieceRenderer();
+    installDebug();
+    if(q('pieceStyle')){ q('pieceStyle').value='soft3d'; }
+    if(window.render) render();
+  }
+  function injectV15Css(){
+    var s=document.createElement('style');
+    s.textContent='\n[data-theme="darkoak"]{--bg:#050403;--light:#8a5f35;--dark:#3f2515;--gold:#d7a342;--w1:#fff0d0;--w2:#d0a15f;--w3:#6d4211;--b1:#46413b;--b2:#0b0806;--b3:#ad7b39}\n[data-theme="walnut"]{--bg:#070403;--light:#9b6b3f;--dark:#4a2b18;--gold:#e0ad52;--w1:#fff2d4;--w2:#d7a766;--w3:#6a3f1d;--b1:#423a34;--b2:#080606;--b3:#a87a42}\n.softpiece{z-index:5;width:94%;height:98%;overflow:visible;filter:drop-shadow(0 9px 7px rgba(0,0,0,.42));transition:transform .14s ease}.sq:hover .softpiece{transform:translateY(-2px) scale(1.035)}.softpiece.white{--body:#dce8ec;--top:#f7fbfb;--edge:#9aacb5;--deep:#b7c8cf;--shadow:rgba(74,91,101,.28);--mark:#6f838c}.softpiece.black{--body:#5e6461;--top:#777d79;--edge:#353a38;--deep:#353a38;--shadow:rgba(0,0,0,.38);--mark:#202321}.softpiece .baseShadow{fill:var(--shadow)}.softpiece .body{fill:var(--body);stroke:var(--edge);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}.softpiece .top{fill:var(--top);opacity:.82}.softpiece .deep{fill:var(--deep)}.softpiece .mark{fill:var(--mark);font-family:Georgia,serif;font-weight:900;font-size:15px;text-anchor:middle;dominant-baseline:middle;opacity:.72}.softpiece .cut{fill:rgba(255,255,255,.42)}.softpiece.black .cut{fill:rgba(255,255,255,.16)}.softpiece.black .mark{fill:#252928;opacity:.95}.softpiece.white .mark{fill:#7f939c}.boardCard{background:linear-gradient(180deg,rgba(68,38,16,.36),rgba(18,10,5,.18)),linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.032))}.board{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),inset 0 0 34px rgba(0,0,0,.52),0 22px 60px rgba(0,0,0,.54)}\n';
+    document.head.appendChild(s);
+  }
+  function relabelControls(){
+    var labels=document.querySelectorAll('label');
+    labels.forEach(function(l){
+      if(l.textContent.trim()==='Theme')l.textContent='Board Skin';
+      if(l.textContent.trim()==='Pieces')l.textContent='Piece Pack';
+    });
+    var theme=q('theme');
+    if(theme){
+      theme.innerHTML='<option value="rings" selected>War Wood</option><option value="darkoak">Dark Oak</option><option value="walnut">Walnut</option><option value="classic">Classic Wood</option>';
+      theme.onchange=function(){document.body.dataset.theme=theme.value;if(window.render)render()};
+    }
+    var pieces=q('pieceStyle');
+    if(pieces){
+      pieces.innerHTML='<option value="soft3d" selected>Soft 3D</option><option value="forge">Forge 3D</option><option value="classic">Classic Symbols</option>';
+      pieces.onchange=function(){if(window.render)render()};
+    }
+  }
+  function installPieceRenderer(){
+    window.pieceSvg=function(p){
+      var c=col(p), type=typ(p), cls=c==='w'?'white':'black';
+      var pack=q('pieceStyle')?q('pieceStyle').value:'soft3d';
+      if(pack==='classic')return '<span class="pclassic '+(c==='w'?'w':'bl')+'">'+U[p]+'</span>';
+      if(pack==='forge')return forgePiece(p);
+      return softPiece(type,cls);
+    };
+  }
+  function softPiece(type,cls){
+    var head='', body='', extra='', yMark=70;
+    if(type==='P'){head='<circle class="body" cx="50" cy="34" r="15"/><circle class="top" cx="45" cy="28" r="6"/>';body='<path class="body" d="M35 55 C38 45 62 45 65 55 L71 87 C60 96 40 96 29 87 Z"/>';}
+    if(type==='R'){head='<path class="body" d="M30 22 Q30 16 36 16 H64 Q70 16 70 22 V35 Q70 42 63 42 H37 Q30 42 30 35 Z"/><rect class="top" x="38" y="12" width="24" height="10" rx="4"/>';body='<path class="body" d="M32 42 H68 L65 87 C56 96 44 96 35 87 Z"/>';}
+    if(type==='N'){head='<path class="body" d="M30 80 C34 58 30 43 43 28 C52 18 66 19 75 27 C68 30 70 40 78 45 C67 45 63 52 67 61 C57 59 51 64 49 81 C44 88 36 88 30 80 Z"/><circle class="mark" cx="58" cy="38" r="3"/>';body='<path class="cut" d="M42 31 C50 25 60 24 67 27 C55 28 48 34 42 42 Z"/>';}
+    if(type==='B'){head='<path class="body" d="M50 15 C67 30 70 49 58 63 C67 69 69 79 64 87 C56 95 44 95 36 87 C31 79 33 69 42 63 C30 49 33 30 50 15 Z"/><path class="cut" d="M51 28 C57 39 56 51 49 61 C43 51 44 39 51 28 Z"/>';}
+    if(type==='Q'){head='<path class="body" d="M22 43 L30 18 L42 38 L50 12 L58 38 L70 18 L78 43 Q67 50 50 50 Q33 50 22 43 Z"/><circle class="top" cx="30" cy="18" r="4"/><circle class="top" cx="50" cy="12" r="4"/><circle class="top" cx="70" cy="18" r="4"/>';body='<path class="body" d="M35 49 H65 L62 87 C54 96 46 96 38 87 Z"/>';}
+    if(type==='K'){head='<path class="body" d="M45 10 H55 V25 H70 Q74 25 74 30 Q74 35 70 35 H55 V49 H45 V35 H30 Q26 35 26 30 Q26 25 30 25 H45 Z"/>';body='<path class="body" d="M33 50 C36 37 64 37 67 50 L63 87 C55 96 45 96 37 87 Z"/>';yMark=73;}
+    return '<svg class="softpiece '+cls+'" viewBox="0 0 100 120"><ellipse class="baseShadow" cx="50" cy="108" rx="30" ry="8"/>'+head+body+extra+'<path class="deep" d="M26 91 C35 84 65 84 74 91 L69 103 C58 109 42 109 31 103 Z"/><text class="mark" x="50" y="'+yMark+'">'+type+'</text></svg>';
+  }
+  function forgePiece(p){
+    var c=col(p),q=typ(p),cls=c==='w'?'w':'bl';
+    if(typeof U!=='undefined' && q('pieceStyle').value==='classic')return '<span class="pclassic '+cls+'">'+U[p]+'</span>';
+    var top='',body='';
+    if(q==='P'){top='<circle class="c" cx="50" cy="36" r="16"/>';body='<path class="d" d="M35 58 C39 47 61 47 65 58 L70 86 C58 94 42 94 30 86 Z"/>'}
+    if(q==='R'){top='<path class="c" d="M27 17 H36 V30 H44 V17 H56 V30 H64 V17 H73 V44 H68 L64 86 C55 93 45 93 36 86 L32 44 H27 Z"/>'}
+    if(q==='N'){top='<path class="c" d="M30 84 C34 64 29 49 41 31 C49 20 61 16 73 20 C68 26 70 34 79 39 C68 43 65 50 70 60 C58 58 50 63 48 81 C43 88 36 89 30 84 Z"/><circle class="g" cx="60" cy="36" r="3"/>'}
+    if(q==='B'){top='<path class="c" d="M50 12 C68 28 71 49 58 64 C67 69 70 78 66 86 C57 93 43 93 34 86 C30 78 33 69 42 64 C29 49 32 28 50 12 Z"/><path class="d" d="M51 24 C58 36 57 50 49 61 C43 51 43 37 51 24 Z"/>'}
+    if(q==='Q'){top='<path class="c" d="M22 39 L29 14 L42 36 L50 8 L58 36 L71 14 L78 39 L70 49 H30 Z"/><circle class="g" cx="29" cy="14" r="4"/><circle class="g" cx="50" cy="8" r="4"/><circle class="g" cx="71" cy="14" r="4"/>';body='<path class="d" d="M34 49 H66 L62 87 C54 94 46 94 38 87 Z"/>'}
+    if(q==='K'){top='<path class="c" d="M45 8 H55 V25 H72 V35 H55 V50 H45 V35 H28 V25 H45 Z"/>';body='<path class="d" d="M34 50 C36 36 64 36 66 50 L62 87 C54 94 46 94 38 87 Z"/>'}
+    return '<svg class="piece3d '+cls+'" viewBox="0 0 100 120"><ellipse class="shadow" cx="50" cy="111" rx="35" ry="7"/><path class="gold" d="M17 101 C24 92 76 92 83 101 L78 112 C65 117 35 117 22 112 Z"/><path class="deep" d="M26 84 C31 77 69 77 74 84 L70 101 C58 105 42 105 30 101 Z"/>'+top+body+'<text class="mark" x="50" y="69">'+q+'</text></svg>';
+  }
+  function installDebug(){
+    window.debug=function(){
+      updateHud();
+      lastReport=['PURE CHESS DEBUG REPORT','Version: play v15 soft piece forge','Architecture: v13 stable core with v15 visual split','No CDN. No external files.','Rules: check/checkmate/stalemate/castling/en passant/promotion picker','Visual System: split','Board Skin: '+(q('theme')?q('theme').selectedOptions[0].textContent:'n/a'),'Piece Pack: '+(q('pieceStyle')?q('pieceStyle').selectedOptions[0].textContent:'n/a'),'Soft 3D pieces: enabled','Hardwood board: preserved','Endgame screen: enabled','Winner labels: clean','Adaptive music: '+(musicOn?'on':'off'),'SFX: '+(sfxOn?'on':'off'),'Result: '+result,'Reason: '+reason,'Winner: '+name(winner),'Turn: '+name(t),'Current legal moves: '+allLegal(t).length,'White legal moves: '+allLegal('w').length,'Black legal moves: '+allLegal('b').length,'In check: '+isCheck(t),'Intensity: '+intensity()+'/5','URL: '+location.href,'Squares: '+document.querySelectorAll('.sq').length,'Board value: '+(q('theme')?q('theme').value:'n/a'),'Piece value: '+(q('pieceStyle')?q('pieceStyle').value:'n/a'),'Mode: '+q('mode').value,'Bot: '+q('bot').value].join('\n');
+      if(q('debugOut'))q('debugOut').textContent=lastReport;
+      toast('v15 debug ran.');
+      return lastReport;
+    };
+    if(q('debugBtn'))q('debugBtn').onclick=debug;
+    if(q('copyBtn'))q('copyBtn').onclick=function(){if(!lastReport)debug();if(navigator.clipboard)navigator.clipboard.writeText(lastReport).then(function(){toast('Debug copied.')})};
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installV15); else setTimeout(installV15,50);
+})();
+<\/script>`;
+html=html.replace(/Pure Chess v13 Piece Forge/g,'Pure Chess v15 Soft Piece Forge').replace(/v13 Piece Forge\. Raised 3D-style war relic pieces\./g,'v15 Soft Piece Forge. Hardwood board + rounded 2026 Soft 3D pieces.').replace(/<\/body>/i,patch+'</body>');
+document.open();document.write(html);document.close();
+}).catch(function(err){document.body.innerHTML='<div class="card"><span class="badge">v15 load issue</span><h1>Could not load v15</h1><p class="muted">'+String(err)+'</p><p class="muted">Use play-v13.html while this is fixed.</p></div>'});
+</script>
+</body>
+</html>
